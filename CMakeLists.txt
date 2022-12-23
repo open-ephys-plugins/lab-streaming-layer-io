@@ -71,6 +71,8 @@ if(MSVC)
 	install(TARGETS ${PLUGIN_NAME} RUNTIME DESTINATION ${GUI_BIN_DIR}/plugins  CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
 
 	set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../libs)
+
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/liblsl/bin/ DESTINATION ${GUI_BIN_DIR}/shared FILES_MATCHING PATTERN "*.dll") 
 elseif(LINUX)
 	target_link_libraries(${PLUGIN_NAME} GL X11 Xext Xinerama asound dl freetype pthread rt)
 	set_property(TARGET ${PLUGIN_NAME} APPEND_STRING PROPERTY LINK_FLAGS
@@ -101,5 +103,7 @@ foreach( src_file IN ITEMS ${SRC_FILES})
 	string(REPLACE "/" "\\" group_name "${src_path_rel}")
 	source_group("${group_name}" FILES "${src_file}")
 endforeach()
+
+
 
 
