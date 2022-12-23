@@ -16,8 +16,5 @@
 .vscode/
 .vs/
 
-# Dependencies
-liblsl/
-
 # OS specific
 .DS_Store
