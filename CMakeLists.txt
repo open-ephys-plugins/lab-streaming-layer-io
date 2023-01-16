@@ -48,7 +48,8 @@ else()
 endif()
 
 target_compile_features(${PLUGIN_NAME} PUBLIC cxx_auto_type cxx_generalized_initializers cxx_std_17)
-target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode ${GUI_BASE_DIR}/JuceLibraryCode/modules ${GUI_BASE_DIR}/Plugins/Headers ${GUI_COMMONLIB_DIR}/include)
+target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode ${GUI_BASE_DIR}/JuceLibraryCode/modules ${GUI_BASE_DIR}/Plugins/Headers ${GUI_COMMONLIB_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/liblsl/include)
+
 
 set(GUI_BIN_DIR ${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER})
 
@@ -60,12 +61,9 @@ if (NOT CMAKE_LIBRARY_ARCHITECTURE)
 	endif()
 endif()
 
-find_package(LSL REQUIRED
-HINTS "${PROJECT_FOLDER}/liblsl")
-
 #Libraries and compiler options
 if(MSVC)
-	target_link_libraries(${PLUGIN_NAME} PRIVATE ${GUI_BIN_DIR}/open-ephys.lib LSL::lsl)
+	target_link_libraries(${PLUGIN_NAME} PRIVATE ${GUI_BIN_DIR}/open-ephys.lib ${CMAKE_CURRENT_SOURCE_DIR}/liblsl/lib/lsl.lib)
 	target_compile_options(${PLUGIN_NAME} PRIVATE /sdl- /W0)
 	
 	install(TARGETS ${PLUGIN_NAME} RUNTIME DESTINATION ${GUI_BIN_DIR}/plugins  CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES})
