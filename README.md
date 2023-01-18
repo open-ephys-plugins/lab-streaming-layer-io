@@ -87,4 +87,4 @@ Running the `ALL_BUILD` scheme will compile the plugin; running the `INSTALL` sc
 
 ## Attribution
 
-This plugin was developed and opened to the community with :heart: by [AE Studio](https://ae.studio/) and [Chadwick Boulay](https://github.com/cboulay).
+This plugin was developed and opened to the community with :heart: by [AE Studio](https://ae.studio/) and [Chadwick Boulay](https://github.com/cboulay). The original repository can be found at https://github.com/labstreaminglayer/OpenEphysLSL-Inlet
