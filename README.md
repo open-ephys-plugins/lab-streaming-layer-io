@@ -1,12 +1,12 @@
-# LSL inlet
-
-## Introduction
-
-This is an [Open Ephys GUI](https://github.com/open-ephys/plugin-GUI) data thread plugin for [LSL](https://labstreaminglayer.readthedocs.io/index.html) streams.
-
-In order to try it out, download a release and follow the manual installation steps from the release archive.
+﻿# Lab Streaming Layer I/O
 
 ![lsl-inlet-screenshot](Resources/lsl-inlet.png)
+
+Creates a lab streaming layer (LSL) client for streaming continuous data into the Open Ephys GUI. An LSL Outlet plugin may be released in the future.
+
+## Installation
+
+This plugin will soon be available via the Open Ephys GUI Plugin Installer. To access the Plugin Installer, press **ctrl-P** or **⌘P** from inside the GUI. Once the installer is loaded, browse to the "Ephys Socket" plugin and click "Install."
 
 ## Usage
 
@@ -20,97 +20,71 @@ A marker stream can be optionally selected. The list of marker streams only show
 }
 ``` 
 
+## Building from source
 
-## How to build
+First, follow the instructions on [this page](https://open-ephys.github.io/gui-docs/Developer-Guide/Compiling-the-GUI.html) to build the Open Ephys GUI.
 
-Please read the guide regarding compiling plugins from [open-ephys](https://open-ephys.github.io/gui-docs/Developer-Guide/Compiling-plugins.html) and install cmake.
-
-The plugin repo needs to be cloned inside a directory (e.g. MyPlugins) that is at the same level as [plugin-GUI](https://github.com/open-ephys/plugin-GUI/), for example:
-
+Then, clone this repository into a directory at the same level as the `plugin-GUI`, e.g.:
+ 
 ```
-/Users/foo/plugin-GUI
-/Users/foo/MyPlugins/lsl-inlet
-```
-
-### macOS
-
-A debug version of the plugin will not work with a release version of `Open Ephys GUI` and a release version of the plugin will not work with a debug version of `Open Ephys GUI`. Keep this in mind when deciding how to generate the makefiles.
-
-Download liblsl:
-
-```
-mkdir liblsl
-cd liblsl
-curl -OL https://github.com/sccn/liblsl/releases/download/v1.16.0/liblsl-1.16.0-OSX_amd64.tar.bz2
-tar xvf liblsl-1.16.0-OSX_amd64.tar.bz2
-```
-
-On macOS either "Xcode" or "Unix Makefiles" can be generated and used to successfully build the plugin.
-If you prefer to work with VSCode then "Unix Makefiles" should be used.
-Generate the Makefile using:
-
-```
-cd Build
-cmake .. -DCMAKE_OSX_ARCHITECTURES="x86_64" -G "Unix Makefiles"
-```
-
-For a release build run:
-
-```
-cd Build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64" -G "Unix Makefiles"
-```
-
-Build a binary:
-
-```
-cd Build
-cmake --build .
-```
-
-Install the plugin:
-
-```
-cd Build
-cmake --build . --target install
-```
-
-This will copy the plugin (`OpenEphysLSL-Inlet.bundle`) to the `$HOME/Application Support/open-ephys/plugins-api8/` folder
-and will available the next time `Open Ephys GUI` is launched.
-
-Copy liblsl to the plugin's search path:
-
-```
-mkdir  mkdir ~/Library/Application\ Support/open-ephys/shared
-cp ../liblsl/lib/*.dylib* ~/Library/Application\ Support/open-ephys/shared/
+Code
+├── plugin-GUI
+│   ├── Build
+│   ├── Source
+│   └── ...
+├── OEPlugins
+│   └── lab-streaming-layer-io
+│       ├── Build
+│       ├── Source
+│       └── ...
 ```
 
 ### Windows
 
-The build was tested using Visual Studio 2022 Community Edition.
-First, download liblsl from [GitHub](https://github.com/sccn/liblsl/releases/download/v1.16.0/liblsl-1.16.0-Win_amd64.zip) and extract it inside the plugin directory.
-The folder structure can be:
+**Requirements:** [Visual Studio](https://visualstudio.microsoft.com/) and [CMake](https://cmake.org/install/)
 
-```
-OpenEphysLSL-Inlet
-|
-|--liblsl
-	|
-	|-- bin
-	|-- include
-	|-- lib
-```
+From the `Build` directory, enter:
 
-Open `Developer Command Prompt for VS 2022` and generate the Makefile using cmake:
-
-```
-cd Build
+```bash
 cmake -G "Visual Studio 17 2022" -A x64 ..
 ```
 
-You can now open the `ALL_BUILD.vcxproj` file from the Build folder with Visual Studio and build a binary. 
+Next, launch Visual Studio and open the `OE_PLUGIN_lab-streaming-layer-io.sln` file that was just created. Select the appropriate configuration (Debug/Release) and build the solution.
 
-To install the plugin copy the file `OpenEphysLSL-Inlet.dll` to the `C:\ProgramData\Open Ephys\plugins-api8` folder and copy
-the file `lsl.dll` to the `C:\ProgramData\Open Ephys\shared-api8` folder.
+Selecting the `INSTALL` project and manually building it will copy the `.dll` and any other required files into the GUI's `plugins` directory. The next time you launch the GUI from Visual Studio, the LSL Inlet plugin should be available.
 
-The plugin will load the next time `Open Ephys GUI` is launched.
+
+### Linux
+
+**Requirements:** [CMake](https://cmake.org/install/)
+
+From the `Build` directory, enter:
+
+```bash
+cmake -G "Unix Makefiles" ..
+cd Debug
+make -j
+make install
+```
+
+This will build the plugin and copy the `.so` file into the GUI's `plugins` directory. The next time you launch the GUI compiled version of the GUI, the LSL Inlet plugin should be available.
+
+
+### macOS
+
+**Requirements:** [Xcode](https://developer.apple.com/xcode/) and [CMake](https://cmake.org/install/)
+
+From the `Build` directory, enter:
+
+```bash
+cmake -G "Xcode" ..
+```
+
+Next, launch Xcode and open the `lab-streaming-layer-io.xcodeproj` file that now lives in the “Build” directory.
+
+Running the `ALL_BUILD` scheme will compile the plugin; running the `INSTALL` scheme will install the `.bundle` file to `/Users/<username>/Library/Application Support/open-ephys/plugins-api8`. The LSL Inlet plugin should be available the next time you launch the GUI from Xcode.
+
+
+## Attribution
+
+This plugin was developed and opened to the community with :heart: by [AE Studio](https://ae.studio/) and [Chadwick Boulay](https://github.com/cboulay).
