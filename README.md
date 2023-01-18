@@ -8,6 +8,12 @@ Creates a lab streaming layer (LSL) client for streaming continuous data into th
 
 This plugin will soon be available via the Open Ephys GUI Plugin Installer. To access the Plugin Installer, press **ctrl-P** or **⌘P** from inside the GUI. Once the installer is loaded, browse to the "Ephys Socket" plugin and click "Install."
 
+
+## Development history
+
+This plugin was developed and opened to the community with :heart: by [AE Studio](https://ae.studio/) and [Chadwick Boulay](https://github.com/cboulay). The original repository can be found at https://github.com/labstreaminglayer/OpenEphysLSL-Inlet
+
+
 ## Usage
 
 Before starting the data acquisition process a data stream needs to be selected. The list of available data streams (and marker streams) is updated every time the button `Refresh streams` is pressed. During data acquisition samples can be scaled in real time by adjusting the `Scale` factor.
@@ -84,7 +90,3 @@ Next, launch Xcode and open the `lab-streaming-layer-io.xcodeproj` file that now
 
 Running the `ALL_BUILD` scheme will compile the plugin; running the `INSTALL` scheme will install the `.bundle` file to `/Users/<username>/Library/Application Support/open-ephys/plugins-api8`. The LSL Inlet plugin should be available the next time you launch the GUI from Xcode.
 
-
-## Attribution
-
-This plugin was developed and opened to the community with :heart: by [AE Studio](https://ae.studio/) and [Chadwick Boulay](https://github.com/cboulay). The original repository can be found at https://github.com/labstreaminglayer/OpenEphysLSL-Inlet
