@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.0)
 
-set(CMAKE_OSX_ARCHITECTURES "x86_64") # force x86 architecture on mac as Open Ephys still runs under Rosetta
+set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architecture for Mac OS X" FORCE)
 
 if (NOT DEFINED GUI_BASE_DIR)
 	if (DEFINED ENV{GUI_BASE_DIR})
@@ -48,7 +48,7 @@ else()
 endif()
 
 target_compile_features(${PLUGIN_NAME} PUBLIC cxx_auto_type cxx_generalized_initializers cxx_std_17)
-target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode ${GUI_BASE_DIR}/JuceLibraryCode/modules ${GUI_BASE_DIR}/Plugins/Headers ${GUI_COMMONLIB_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/liblsl/include)
+target_include_directories(${PLUGIN_NAME} PUBLIC ${GUI_BASE_DIR}/JuceLibraryCode ${GUI_BASE_DIR}/JuceLibraryCode/modules ${GUI_BASE_DIR}/Plugins/Headers ${GUI_COMMONLIB_DIR}/include)
 
 
 set(GUI_BIN_DIR ${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER})
@@ -101,6 +101,13 @@ endforeach()
 #additional libraries, if needed
 find_library(LSL_LIBRARIES NAMES lsl liblsl)
 find_path(LSL_INCLUDE_DIRS lsl_cpp.h)
+
+if(NOT LSL_LIBRARIES)
+	message(FATAL_ERROR "LSL library not found")
+else()
+	message(STATUS "LSL library found: ${LSL_LIBRARIES}")
+endif()
+
 
 target_include_directories(${PLUGIN_NAME} PUBLIC ${LSL_INCLUDE_DIRS})
 target_link_libraries(${PLUGIN_NAME} ${LSL_LIBRARIES})
