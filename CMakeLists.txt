@@ -110,11 +110,11 @@ endif()
 
 
 target_include_directories(${PLUGIN_NAME} PUBLIC ${LSL_INCLUDE_DIRS})
-target_link_libraries(${PLUGIN_NAME} ${LSL_LIBRARIES})
+target_link_libraries(${PLUGIN_NAME} PUBLIC ${LSL_LIBRARIES})
 
 #copy the library binaries when installing
 if (MSVC)
-	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/windows/bin/${CMAKE_LIBRARY_ARCHITECTURE}/ DESTINATION ${GUI_BIN_DIR}/shared)
+	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/windows/bin DESTINATION ${GUI_BIN_DIR}/shared)
 elseif(LINUX)
 	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/linux/bin/ DESTINATION ${GUI_BIN_DIR}/shared)
 elseif(APPLE)
