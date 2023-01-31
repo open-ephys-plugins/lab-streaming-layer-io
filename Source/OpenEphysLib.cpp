@@ -43,8 +43,8 @@ extern "C" EXPORT void getLibInfo(Plugin::LibraryInfo *info)
 	Should not be changed to ensure it is always equal to the one used in the latest codebase.
 	The GUI refuses to load plugins with mismatched API versions */
 	info->apiVersion = PLUGIN_API_VER;
-	info->name = "LSLInletLibrary";
-	info->libVersion = "0.1.1";
+	info->name = "Lab Streaming Layer IO";
+	info->libVersion = "0.1.2";
 	info->numPlugins = NUM_PLUGINS;
 }
 
