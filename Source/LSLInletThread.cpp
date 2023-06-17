@@ -43,6 +43,16 @@ LSLInletThread::LSLInletThread(SourceNode *sn) : DataThread(sn),
 
     sampleNumbers = (int64 *)malloc(numSamples * sizeof(int64));
     ttlEventWords = (uint64 *)malloc(numSamples * sizeof(uint64));
+
+    eventMap["0"] = 0;
+    eventMap["1"] = 1;
+    eventMap["2"] = 2;
+    eventMap["3"] = 3;
+    eventMap["4"] = 4;
+    eventMap["5"] = 5;
+    eventMap["6"] = 6;
+    eventMap["7"] = 7;
+    eventMap["8"] = 8;
 }
 
 LSLInletThread::~LSLInletThread()
@@ -166,7 +176,7 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
             }
             else
             {
-                ttlEventWords[0] = eventMap[sample];
+                ttlEventWords[0] = 1ULL << (eventMap[sample] - 1);
             }
 
             if (++i >= samples_to_read)
