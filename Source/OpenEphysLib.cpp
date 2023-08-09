@@ -44,7 +44,7 @@ extern "C" EXPORT void getLibInfo(Plugin::LibraryInfo *info)
 	The GUI refuses to load plugins with mismatched API versions */
 	info->apiVersion = PLUGIN_API_VER;
 	info->name = "Lab Streaming Layer IO";
-	info->libVersion = "0.1.2";
+	info->libVersion = "0.1.3";
 	info->numPlugins = NUM_PLUGINS;
 }
 
