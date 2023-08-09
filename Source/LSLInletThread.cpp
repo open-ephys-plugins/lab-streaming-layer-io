@@ -79,11 +79,11 @@ bool LSLInletThread::updateBuffer()
     }
     catch (const std::runtime_error &re)
     {
-        std::cout << "Failed to read data samples with runtime error: " << re.what() << std::endl;
+        LOGE("Failed to read data samples with runtime error: ", re.what());
     }
     catch (const std::exception &ex)
     {
-        std::cout << "Failed to read data samples with exception: " << ex.what() << std::endl;
+        LOGE("Failed to read data samples with runtime exception: ", ex.what());
     }
 
     if (multiplexed_samples_read <= 0)
@@ -187,11 +187,11 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
     }
     catch (const std::runtime_error &re)
     {
-        std::cout << "Failed to read markers with runtime error: " << re.what() << std::endl;
+        LOGE("Failed to read markers with runtime error: ", re.what());
     }
     catch (const std::exception &ex)
     {
-        std::cout << "Failed to read markers with exception: " << ex.what() << std::endl;
+        LOGE("Failed to read markers with exception: ", ex.what());
     }
 }
 
@@ -417,12 +417,12 @@ bool LSLInletThread::setMarkersMappingPath(std::string filePath)
     }
     catch (const std::runtime_error &re)
     {
-        std::cout << "Failed to read markers mapping file with runtime error: " << re.what() << std::endl;
+        LOGE("Failed to read markers mapping file with runtime error: ", re.what());
         return false;
     }
     catch (const std::exception &ex)
     {
-        std::cout << "Failed to read markers mapping file with exception: " << ex.what() << std::endl;
+        LOGE("Failed to read markers mapping file with runtime exception: ", ex.what());
         return false;
     }
 
