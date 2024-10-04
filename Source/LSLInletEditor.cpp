@@ -32,7 +32,7 @@ LSLInletEditor::LSLInletEditor(GenericProcessor *parentNode, LSLInletThread *thr
     desiredWidth = 220;
 
     // Add connect button
-    discoverButton = new UtilityButton("Refresh streams", Font("Small Text", 12, Font::bold));
+    discoverButton = new UtilityButton("Refresh streams");
     discoverButton->setRadius(3.0f);
     discoverButton->setBounds(10, 35, 100, 20);
     discoverButton->addListener(this);
@@ -69,7 +69,7 @@ LSLInletEditor::LSLInletEditor(GenericProcessor *parentNode, LSLInletThread *thr
     markerStreamMappingLabel->setColour(Label::textColourId, Colours::darkgrey);
     addAndMakeVisible(markerStreamMappingLabel);
 
-    fileButton = new UtilityButton("F:", Font("Small Text", 12, Font::bold));
+    fileButton = new UtilityButton("F:");
     fileButton->setRadius(3.0f);
     fileButton->setBounds(115, 105, 20, 20);
     fileButton->addListener(this);

@@ -99,10 +99,10 @@ public:
     std::unique_ptr<GenericEditor> createEditor(SourceNode *sn) override;
 
     // ** Allows the DataThread plugin to respond to messages sent by other processors */
-    void handleBroadcastMessage(String msg) override;
+    void handleBroadcastMessage(const String& msg, const int64 messageTimeMilliseconds) override;
 
     // ** Allows the DataThread plugin to handle a config message while acquisition is not active. */
-    String handleConfigMessage(String msg) override;
+    String handleConfigMessage(const String& msg) override;
 
 private:
     template <typename T>

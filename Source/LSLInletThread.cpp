@@ -121,8 +121,7 @@ bool LSLInletThread::updateBuffer()
         sampleNumbers,
         timestampBuffer,
         ttlEventWords,
-        (int)data_samples_read,
-        1);
+        (int)data_samples_read);
 
     totalSamples += data_samples_read;
 
@@ -360,11 +359,11 @@ std::unique_ptr<GenericEditor> LSLInletThread::createEditor(SourceNode *sn)
     return editor;
 }
 
-void LSLInletThread::handleBroadcastMessage(String msg)
+void LSLInletThread::handleBroadcastMessage(const String& msg, const int64 messageTimeMilliseconds)
 {
 }
 
-String LSLInletThread::handleConfigMessage(String msg)
+String LSLInletThread::handleConfigMessage(const String& msg)
 {
     return "";
 }
