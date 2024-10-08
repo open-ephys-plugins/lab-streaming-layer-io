@@ -98,6 +98,9 @@ public:
     /** Create the DataThread custom editor */
     std::unique_ptr<GenericEditor> createEditor(SourceNode *sn) override;
 
+    /** Register parameters */
+    void registerParameters() override;
+
     // ** Allows the DataThread plugin to respond to messages sent by other processors */
     void handleBroadcastMessage(const String& msg, const int64 messageTimeMilliseconds) override;
 

@@ -27,6 +27,26 @@
 #include <EditorHeaders.h>
 #include "LSLInletThread.h"
 
+class RefreshButton : public Button
+{
+
+public:
+    /** Constructor */
+    RefreshButton ();
+
+    /** Destructor */
+    ~RefreshButton() {}
+
+    void paintButton (Graphics& g, bool isMouseOver, bool isButtonDown) override;
+
+    /** Sets the button bounds when editor is resized */
+    void parentSizeChanged() override;
+
+private:
+
+    std::unique_ptr<Drawable> refreshIcon;
+};
+
 class LSLInletEditor : public GenericEditor,
 					   public Button::Listener,
 					   public ComboBox::Listener,
@@ -64,7 +84,8 @@ private:
 	File lastFilePath;
 
 	// Button that tried to connect to client
-	ScopedPointer<UtilityButton> discoverButton;
+	//ScopedPointer<UtilityButton> discoverButton;
+	std::unique_ptr<RefreshButton> refreshButton;
 
 	// Data stream selection
 	ScopedPointer<Label> dataStreamSelectorLabel;

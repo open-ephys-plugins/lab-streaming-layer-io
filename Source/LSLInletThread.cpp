@@ -64,6 +64,14 @@ LSLInletThread::~LSLInletThread()
     free(ttlEventWords);
 }
 
+void LSLInletThread::registerParameters()
+{
+    addSelectedStreamParameter(Parameter::PROCESSOR_SCOPE, "data_stream", "Data Stream", "The LSL stream to read data from", {}, 0);
+    addSelectedStreamParameter(Parameter::PROCESSOR_SCOPE, "marker_stream", "Marker Stream", "The LSL stream to read markers from", {}, 0);
+    addIntParameter(Parameter::PROCESSOR_SCOPE, "scale", "Scale", "Scale factor for the data samples", 1, 0.0f, 10000.0f);
+    addPathParameter(Parameter::PROCESSOR_SCOPE, "mapping", "Marker Map File", "Select a file with the TTL mapping for the markers stream", "default", {"json"}, false);
+}
+
 void LSLInletThread::discover()
 {
     availableStreams = lsl::resolve_streams(1.0);

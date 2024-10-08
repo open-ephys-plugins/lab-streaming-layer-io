@@ -23,21 +23,68 @@
 
 #include "LSLInletEditor.h"
 
+RefreshButton::RefreshButton() : Button ("Refresh")
+{
+    XmlDocument xmlDoc (R"(
+        <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13 2L11 3.99545L11.0592 4.05474M11 18.0001L13 19.9108L12.9703 19.9417M11.0592 4.05474L13 6M11.0592 4.05474C11.3677 4.01859 11.6817 4 12 4C16.4183 4 20 7.58172 20 12C20 14.5264 18.8289 16.7793 17 18.2454M7 5.75463C5.17107 7.22075 4 9.47362 4 12C4 16.4183 7.58172 20 12 20C12.3284 20 12.6523 19.9802 12.9703 19.9417M11 22.0001L12.9703 19.9417" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    )");
+
+    refreshIcon = Drawable::createFromSVG (*xmlDoc.getDocumentElement().get());
+
+    setClickingTogglesState (false);
+}
+
+void RefreshButton::paintButton (Graphics& g, bool isMouseOver, bool isButtonDown)
+{
+    Colour buttonColour = Colours::darkgrey;
+
+    if (isMouseOver && isEnabled())
+        buttonColour = Colours::yellow;
+
+    refreshIcon->replaceColour (Colours::black, buttonColour);
+
+    refreshIcon->drawWithin (g, getLocalBounds().toFloat(), RectanglePlacement::centred, 1.0f);
+
+    refreshIcon->replaceColour (buttonColour, Colours::black);
+}
+
+void RefreshButton::parentSizeChanged()
+{
+    setBounds (getParentWidth() - 25, 4, 16, 16);
+}
+
 LSLInletEditor::LSLInletEditor(GenericProcessor *parentNode, LSLInletThread *thread)
     : GenericEditor(parentNode)
 {
     lastFilePath = CoreServices::getDefaultUserSaveDirectory();
     inletThread = thread;
 
-    desiredWidth = 220;
+    desiredWidth = 200;
 
-    // Add connect button
+    // Stream selector
+    addSelectedStreamParameterEditor(Parameter::PROCESSOR_SCOPE, "data_stream", 10, 29);
+    addTextBoxParameterEditor(Parameter::PROCESSOR_SCOPE, "scale", 10, 54);
+    addSelectedStreamParameterEditor(Parameter::PROCESSOR_SCOPE, "marker_stream", 10, 79);
+    addPathParameterEditor(Parameter::PROCESSOR_SCOPE, "mapping", 10, 104);
+
+    refreshButton = std::make_unique<RefreshButton>();
+    refreshButton->setBounds (desiredWidth - 65, 4, 16, 16);
+    refreshButton->addListener (this);
+    refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
+    addChildComponent (refreshButton.get());
+    refreshButton->setVisible (true);
+
+    /*
     discoverButton = new UtilityButton("Refresh streams");
     discoverButton->setRadius(3.0f);
-    discoverButton->setBounds(10, 35, 100, 20);
+    discoverButton->setBounds(50, 100, 100, 20);
     discoverButton->addListener(this);
     addAndMakeVisible(discoverButton);
+    */
 
+    /*
     // Data stream combo box
     dataStreamSelectorLabel = new Label("Select a data stream", "Select a data stream");
     dataStreamSelectorLabel->setFont(Font("Small Text", 10, Font::plain));
@@ -98,47 +145,57 @@ LSLInletEditor::LSLInletEditor(GenericProcessor *parentNode, LSLInletThread *thr
     scaleInput->setColour(Label::backgroundColourId, Colours::lightgrey);
     scaleInput->addListener(this);
     addAndMakeVisible(scaleInput);
+    */
 }
 
 void LSLInletEditor::startAcquisition()
 {
+    return;
     // Disable the whole GUI
+    /*
     discoverButton->setEnabled(false);
     streamSelector->setEnabled(false);
     fileButton->setEnabled(false);
     dataStreamSelectorBox->setEnabled(false);
     markerStreamSelectorBox->setEnabled(false);
+    */
 }
 
 void LSLInletEditor::stopAcquisition()
 {
+    return;
     // Reenable the whole GUI
+    /*
     discoverButton->setEnabled(true);
     streamSelector->setEnabled(true);
     fileButton->setEnabled(true);
     dataStreamSelectorBox->setEnabled(true);
     markerStreamSelectorBox->setEnabled(true);
+    */
 }
 
 // Button::Listener
 void LSLInletEditor::buttonClicked(Button *button)
 {
-    if (button == discoverButton)
+    if (button == refreshButton.get())
     {
-        dataStreamSelectorBox->clear();
-        markerStreamSelectorBox->clear();
+        //dataStreamSelectorBox->clear();
+        //markerStreamSelectorBox->clear();
         inletThread->discover();
 
         int selectedDataStreamIndex = STREAM_SELECTION_UNDEFINED;
         int selectedMarkerStreamIndex = 0;
-        markerStreamSelectorBox->addItem("None", STREAM_SELECTION_UNDEFINED);
+
+        Array<String> dataStreamNames;
+        Array<String> markerStreamNames;
 
         for (int i = 0; i < inletThread->availableStreams.size(); i++)
         {
             const auto &s = inletThread->availableStreams[i];
             if (s.nominal_srate() > 0)
             {
-                dataStreamSelectorBox->addItem(s.name() + " (" + s.type() + ")", i + 1);
+                //dataStreamSelectorBox->addItem(s.name() + " (" + s.type() + ")", i + 1);
+                dataStreamNames.add (s.name() + " (" + s.type() + ")");
                 selectedDataStreamIndex = 0;
             }
             else
@@ -148,13 +205,26 @@ void LSLInletEditor::buttonClicked(Button *button)
                     LOGC("Skipping irregular stream ", s.name(), " because it doesn't have exactly 1 channel.\n", s.as_xml());
                     continue;
                 }
-                markerStreamSelectorBox->addItem(s.name() + " (" + s.type() + ")", i + 1);
+                markerStreamNames.add(s.name() + " (" + s.type() + ")");
             }
         }
+        if (markerStreamNames.size() == 0)
+            markerStreamNames.add("None");
 
-        dataStreamSelectorBox->setSelectedItemIndex(selectedDataStreamIndex);
+        SelectedStreamParameter* dataStreamParam = (SelectedStreamParameter*) (inletThread->getParameter ("data_stream"));
+        dataStreamParam->setStreamNames (dataStreamNames);
+        //activeStreamParam->setNextValue (0, false);
+        //parameterValueChanged (activeStreamParam)
+
+        SelectedStreamParameter* markerStreamParam = (SelectedStreamParameter*) (inletThread->getParameter ("marker_stream"));
+        markerStreamParam->setStreamNames (markerStreamNames);
+        //activeStreamParam->setNextValue (0, false);
+        //parameterValueChanged (activeStreamParam)
+        //markerStreamSelectorBox->addItem("None", STREAM_SELECTION_UNDEFINED);
+
+        //dataStreamSelectorBox->setSelectedItemIndex(selectedDataStreamIndex);
         inletThread->selectedDataStream = selectedDataStreamIndex;
-        markerStreamSelectorBox->setSelectedItemIndex(selectedMarkerStreamIndex);
+        //markerStreamSelectorBox->setSelectedItemIndex(selectedMarkerStreamIndex);
         inletThread->selectedMarkersStream = STREAM_SELECTION_UNDEFINED;
 
         CoreServices::updateSignalChain(this);
@@ -221,13 +291,16 @@ void LSLInletEditor::labelTextChanged(Label *label)
 
 void LSLInletEditor::saveCustomParametersToXml(XmlElement *xmlNode)
 {
+    /*
     XmlElement *parameters = xmlNode->createNewChildElement("PARAMETERS");
 
     parameters->setAttribute("scale", scaleInput->getText());
+    */
 }
 
 void LSLInletEditor::loadCustomParametersFromXml(XmlElement *xmlNode)
 {
+    /*
     forEachXmlChildElement(*xmlNode, subNode)
     {
         if (subNode->hasTagName("PARAMETERS"))
@@ -236,4 +309,5 @@ void LSLInletEditor::loadCustomParametersFromXml(XmlElement *xmlNode)
             inletThread->dataScale = subNode->getDoubleAttribute("scale", DEFAULT_DATA_SCALE);
         }
     }
+    */
 }
