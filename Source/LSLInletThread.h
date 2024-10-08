@@ -101,6 +101,9 @@ public:
     /** Register parameters */
     void registerParameters() override;
 
+    /** Handle parameter changes */
+    void parameterValueChanged(Parameter *param) override;
+
     // ** Allows the DataThread plugin to respond to messages sent by other processors */
     void handleBroadcastMessage(const String& msg, const int64 messageTimeMilliseconds) override;
 

@@ -72,6 +72,31 @@ void LSLInletThread::registerParameters()
     addPathParameter(Parameter::PROCESSOR_SCOPE, "mapping", "Marker Map File", "Select a file with the TTL mapping for the markers stream", "default", {"json"}, false);
 }
 
+void LSLInletThread::parameterValueChanged(Parameter *param)
+{
+    if (param->getName() == "data_stream")
+    {
+        selectedDataStream = ((SelectedStreamParameter *)param)->getSelectedIndex();
+        resizeBuffers();
+        //CoreServices::updateSignalChain(getEditor());
+    }
+    else if (param->getName() == "marker_stream")
+    {
+        selectedMarkersStream = ((SelectedStreamParameter *)param)->getSelectedIndex();
+        //TODO: Validate marker stream selection against STREAM_SELECTION_UNDEFINED;
+        //CoreServices::updateSignalChain(getEditor());
+    }
+    else if (param->getName() == "scale")
+    {
+        dataScale = ((IntParameter *)param)->getValue();
+    }
+    else if (param->getName() == "mapping")
+    {
+        std::string filePath = ((PathParameter *)param)->getValue().toString().toStdString();
+        setMarkersMappingPath(filePath);
+    }
+}
+
 void LSLInletThread::discover()
 {
     availableStreams = lsl::resolve_streams(1.0);

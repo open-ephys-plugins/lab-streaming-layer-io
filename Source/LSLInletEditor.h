@@ -48,9 +48,7 @@ private:
 };
 
 class LSLInletEditor : public GenericEditor,
-					   public Button::Listener,
-					   public ComboBox::Listener,
-					   public Label::Listener
+					   public Button::Listener
 {
 public:
 	/** The class constructor, used to initialize any members. */
@@ -62,49 +60,16 @@ public:
 	/** Button listener callback, called by button when pressed. */
 	void buttonClicked(Button *button) override;
 
-	/** Called when a ComboBox has its selected item changed. */
-	void comboBoxChanged(ComboBox *comboBoxThatHasChanged) override;
-
-	/** Called when label is changed */
-	void labelTextChanged(Label *label) override;
-
-	/** Called by processor graph in beginning of the acqusition, disables editor completly. */
+	/** Updates editor state on start of acquisition */
 	void startAcquisition() override;
 
-	/** Called by processor graph at the end of the acqusition, reenables editor completly. */
+	/** Updates editor state on stop of acquisition */
 	void stopAcquisition() override;
 
-	/** Called when configuration is saved. Adds editors config to xml. */
-	void saveCustomParametersToXml(XmlElement *xml) override;
-
-	/** Called when configuration is loaded. Reads editors config from xml. */
-	void loadCustomParametersFromXml(XmlElement *xml) override;
-
 private:
-	File lastFilePath;
 
-	// Button that tried to connect to client
-	//ScopedPointer<UtilityButton> discoverButton;
 	std::unique_ptr<RefreshButton> refreshButton;
 
-	// Data stream selection
-	ScopedPointer<Label> dataStreamSelectorLabel;
-	ScopedPointer<ComboBox> dataStreamSelectorBox;
-
-	// Marker stream selection
-	ScopedPointer<Label> markerStreamSelectorLabel;
-	ScopedPointer<ComboBox> markerStreamSelectorBox;
-
-	// Marker stream mapping
-	ScopedPointer<UtilityButton> fileButton;
-	ScopedPointer<Label> markerStreamMappingLabel;
-	ScopedPointer<Label> fileNameLabel;
-
-	// Scaling
-	ScopedPointer<Label> scaleLabel;
-	ScopedPointer<Label> scaleInput;
-
-	// Parent node
 	LSLInletThread *inletThread;
 };
 
