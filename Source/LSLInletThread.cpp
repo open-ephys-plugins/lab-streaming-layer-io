@@ -39,6 +39,7 @@ LSLInletThread::LSLInletThread(SourceNode *sn) : DataThread(sn),
     this->markersStream = NULL;
 
     dataBuffer = (float *)malloc(numChannels * numSamples * sizeof(float));
+    samples = (float *)malloc(numChannels * numSamples * sizeof(float));
     timestampBuffer = (double *)malloc(numSamples * sizeof(double));
 
     sampleNumbers = (int64 *)malloc(numSamples * sizeof(int64));
@@ -116,8 +117,17 @@ bool LSLInletThread::updateBuffer()
         dataBuffer[i] = (float)(dataScale * dataBuffer[i]);
     }
 
+    //Update dataBuffer from sample major to channel major
+    for (int ch = 0; ch < numChannels; ch++)
+    {
+        for (int i = 0; i < data_samples_read; i++)
+        {
+            samples[ch * data_samples_read + i] = dataBuffer[i * numChannels + ch];
+        }
+    }
+
     sourceBuffers[0]->addToBuffer(
-        dataBuffer,
+        samples,
         sampleNumbers,
         timestampBuffer,
         ttlEventWords,

@@ -115,6 +115,7 @@ private:
     lsl::stream_inlet *markersStream;
 
     float *dataBuffer;
+    float *samples;
     double *timestampBuffer;
 
     int64 *sampleNumbers;
