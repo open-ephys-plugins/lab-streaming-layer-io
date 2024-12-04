@@ -116,6 +116,9 @@ endif()
 target_include_directories(${PLUGIN_NAME} PUBLIC ${LSL_INCLUDE_DIRS})
 target_link_libraries(${PLUGIN_NAME} ${LSL_LIBRARIES})
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-undefined,error")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,error")
+
 #copy the library binaries when installing
 if (MSVC)
 	install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libs/windows/bin DESTINATION ${GUI_BIN_DIR}/shared)
