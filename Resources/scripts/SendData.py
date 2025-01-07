@@ -5,6 +5,7 @@ import getopt
 
 import time
 from random import random as rand
+import math
 
 from pylsl import StreamInfo, StreamOutlet, local_clock
 
@@ -50,13 +51,12 @@ def main(argv):
         elapsed_time = local_clock() - start_time
         required_samples = int(srate * elapsed_time) - sent_samples
         for sample_ix in range(required_samples):
-            # make a new random n_channels sample; this is converted into a
-            # pylsl.vectorf (the data type that is expected by push_sample)
-            mysample = [rand() for _ in range(n_channels)]
-            # now send it
+            # Calculate the sine wave value based on time
+            t = (sent_samples + sample_ix) / srate  # Current time in seconds
+            # 2 Hz sine wave: 2 * 2 * pi * t = 4pi * t
+            mysample = [math.sin(4 * math.pi * t) for _ in range(n_channels)]
             outlet.push_sample(mysample)
         sent_samples += required_samples
-        # now send it and wait for a bit before trying again.
         time.sleep(0.01)
 
 
