@@ -239,7 +239,7 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
 
 bool LSLInletThread::foundInputSource()
 {
-    return true;
+    return !availableStreams.empty();
 }
 
 bool LSLInletThread::startAcquisition()
@@ -352,7 +352,7 @@ void LSLInletThread::updateSettings(OwnedArray<ContinuousChannel> *continuousCha
     configurationObjects->clear();
     sourceStreams->clear();
 
-    if (selectedDataStream == STREAM_SELECTION_UNDEFINED)
+    if (availableStreams.empty())
     {
         return;
     }
