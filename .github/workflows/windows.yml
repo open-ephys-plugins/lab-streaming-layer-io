@@ -60,7 +60,7 @@ jobs:
         mkdir plugins
         cp $build_dir/*.dll plugins
         mkdir shared
-        cp -r libs/windows/bin/x64/* shared
+        cp -r libs/windows/bin/* shared
         zipfile=${package}_${new_plugin_ver}.zip
         powershell Compress-Archive -Path "plugins" -DestinationPath ${zipfile}
         powershell Compress-Archive -U -Path "shared" -DestinationPath ${zipfile}

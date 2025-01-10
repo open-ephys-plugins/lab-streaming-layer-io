@@ -54,6 +54,8 @@ LSLInletThread::LSLInletThread (SourceNode* sn) : DataThread (sn),
     eventMap["6"] = 6;
     eventMap["7"] = 7;
     eventMap["8"] = 8;
+
+    discover();
 }
 
 LSLInletThread::~LSLInletThread()
@@ -66,8 +68,16 @@ LSLInletThread::~LSLInletThread()
 
 void LSLInletThread::registerParameters()
 {
-    addSelectedStreamParameter (Parameter::PROCESSOR_SCOPE, "data_stream", "Data Stream", "The LSL stream to read data from", {}, 0);
-    addSelectedStreamParameter (Parameter::PROCESSOR_SCOPE, "marker_stream", "Marker Stream", "The LSL stream to read markers from", {}, 0);
+    Array<String> dataStreamList;
+    for (const auto& stream : dataStreams)
+        dataStreamList.add (stream.name() + " (" + stream.type() + ")");
+    addSelectedStreamParameter (Parameter::PROCESSOR_SCOPE, "data_stream", "Data Stream", "The LSL stream to read data from", dataStreamList, 0);
+
+    Array<String> markerStreamList;
+    for (const auto& stream : markerStreams)
+        markerStreamList.add (stream.name() + " (" + stream.type() + ")");
+
+    addSelectedStreamParameter (Parameter::PROCESSOR_SCOPE, "marker_stream", "Marker Stream", "The LSL stream to read markers from", markerStreamList, 0);
     addIntParameter (Parameter::PROCESSOR_SCOPE, "scale", "Scale", "Scale factor for the data samples", 1, 0.0f, 10000.0f);
     addPathParameter (Parameter::PROCESSOR_SCOPE, "mapping", "Marker Map File", "Select a file with the TTL mapping for the markers stream", "default", { "json" }, false, false, true);
 }
@@ -101,6 +111,7 @@ void LSLInletThread::discover()
     if (availableStreams.empty())
     {
         LOGC ("No streams found");
+        firstConnect = false;
         return;
     }
     dataStreams.clear();
@@ -134,21 +145,26 @@ void LSLInletThread::discover()
     if (markerStreamNames.size() == 0)
         markerStreamNames.add ("None");
 
-    SelectedStreamParameter* dataStreamParam = (SelectedStreamParameter*) (getParameter ("data_stream"));
-    dataStreamParam->setStreamNames (dataStreamNames);
+    if (!firstConnect)
+    {
+        SelectedStreamParameter* dataStreamParam = (SelectedStreamParameter*) (getParameter ("data_stream"));
+        dataStreamParam->setStreamNames (dataStreamNames);
 
-    SelectedStreamParameter* markerStreamParam = (SelectedStreamParameter*) (getParameter ("marker_stream"));
-    markerStreamParam->setStreamNames (markerStreamNames);
+        SelectedStreamParameter* markerStreamParam = (SelectedStreamParameter*) (getParameter ("marker_stream"));
+        markerStreamParam->setStreamNames (markerStreamNames);
+
+        CoreServices::updateSignalChain (sn->getEditor());
+    }
 
     selectedDataStream = ! dataStreamNames.size() ? STREAM_SELECTION_UNDEFINED : 0; //default to the first data stream
     selectedMarkersStream = ! markerStreamNames.size() ? STREAM_SELECTION_UNDEFINED : 0; //default to the first marker stream
-
-    CoreServices::updateSignalChain (sn->getEditor());
 
     if (! availableStreams.empty())
     {
         LOGC ("Found ", availableStreams.size(), " total streams");
     }
+
+    firstConnect = false;
 }
 
 bool LSLInletThread::updateBuffer()

@@ -138,6 +138,8 @@ private:
 
     int numChannels;
     double initialTimestamp;
+
+    bool firstConnect = true;
 };
 
 #endif
