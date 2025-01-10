@@ -171,7 +171,6 @@ bool LSLInletThread::updateBuffer()
 
     if (multiplexed_samples_read <= 0)
     {
-        // it probably doesn't make sense to read markers if we didn't find samples
         return true;
     }
 
@@ -263,17 +262,12 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
                 break;
             }
 
-            // Debug: Print all available mappings and current sample
-            LOGC("Current sample: ", sample);
-            LOGC("Available mappings:");
-            for (const auto& mapping : eventMap) {
-                LOGC("Key: '", mapping.first, "' Value: ", mapping.second);
-                
-                if (mapping.first == sample) {
-                    ttlEventWords[0] = 1ULL << (mapping.second - 1);
-                    LOGC("Found matching mapping!");
-                    break;
-                }
+            auto it = eventMap.find(sample);
+            if (it != eventMap.end()) {
+                ttlEventWords[i] = 1ULL << (it->second - 1);
+            }
+            else {
+                LOGC("No event channel mapping found for marker: '", sample, "'");
             }
 
             if (++i >= samples_to_read)
