@@ -11,11 +11,11 @@ from pylsl import StreamInfo, StreamOutlet, local_clock
 
 
 def main(argv):
-    srate = 100
+    srate = 100 # 100Hz for now, TODO: support 40kHz sampling rate
     name = 'BioSemi'
     type = 'EEG'
     n_channels = 8
-    help_string = 'SendData.py -s <sampling_rate> -n <stream_name> -t <stream_type>'
+    help_string = 'SendSineData.py -s <sampling_rate> -n <stream_name> -t <stream_type>'
     try:
         opts, args = getopt.getopt(argv, "hs:c:n:t:", longopts=["srate=", "channels=", "name=", "type"])
     except getopt.GetoptError:
@@ -53,11 +53,11 @@ def main(argv):
         for sample_ix in range(required_samples):
             # Calculate the sine wave value based on time
             t = (sent_samples + sample_ix) / srate  # Current time in seconds
-            # 2 Hz sine wave: 2 * 2 * pi * t = 4pi * t
-            mysample = [math.sin(4 * math.pi * t) for _ in range(n_channels)]
+            # 1 Hz sine wave with 100x amplitude
+            mysample = [100 * math.sin(2 * math.pi * t) for _ in range(n_channels)]
             outlet.push_sample(mysample)
         sent_samples += required_samples
-        time.sleep(0.01)
+        time.sleep(0.1)  # 1ms sleep for more precise timing at high sampling rate
 
 
 if __name__ == '__main__':
