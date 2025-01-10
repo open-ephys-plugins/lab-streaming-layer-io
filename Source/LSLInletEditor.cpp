@@ -80,55 +80,7 @@ void LSLInletEditor::buttonClicked(Button *button)
 {
     if (button == refreshButton.get())
     {
-        //dataStreamSelectorBox->clear();
-        //markerStreamSelectorBox->clear();
         inletThread->discover();
-
-        int selectedDataStreamIndex = STREAM_SELECTION_UNDEFINED;
-        int selectedMarkerStreamIndex = 0;
-
-        Array<String> dataStreamNames;
-        Array<String> markerStreamNames;
-
-        for (int i = 0; i < inletThread->availableStreams.size(); i++)
-        {
-            const auto &s = inletThread->availableStreams[i];
-            if (s.nominal_srate() > 0)
-            {
-                //dataStreamSelectorBox->addItem(s.name() + " (" + s.type() + ")", i + 1);
-                dataStreamNames.add (s.name() + " (" + s.type() + ")");
-                selectedDataStreamIndex = 0;
-            }
-            else
-            {
-                if (s.channel_count() != 1)
-                {
-                    LOGC("Skipping irregular stream ", s.name(), " because it doesn't have exactly 1 channel.\n", s.as_xml());
-                    continue;
-                }
-                markerStreamNames.add(s.name() + " (" + s.type() + ")");
-            }
-        }
-        if (markerStreamNames.size() == 0)
-            markerStreamNames.add("None");
-
-        SelectedStreamParameter* dataStreamParam = (SelectedStreamParameter*) (inletThread->getParameter ("data_stream"));
-        dataStreamParam->setStreamNames (dataStreamNames);
-        //activeStreamParam->setNextValue (0, false);
-        //parameterValueChanged (activeStreamParam)
-
-        SelectedStreamParameter* markerStreamParam = (SelectedStreamParameter*) (inletThread->getParameter ("marker_stream"));
-        markerStreamParam->setStreamNames (markerStreamNames);
-        //activeStreamParam->setNextValue (0, false);
-        //parameterValueChanged (activeStreamParam)
-        //markerStreamSelectorBox->addItem("None", STREAM_SELECTION_UNDEFINED);
-
-        //dataStreamSelectorBox->setSelectedItemIndex(selectedDataStreamIndex);
-        inletThread->selectedDataStream = selectedDataStreamIndex;
-        //markerStreamSelectorBox->setSelectedItemIndex(selectedMarkerStreamIndex);
-        inletThread->selectedMarkersStream = STREAM_SELECTION_UNDEFINED;
-
-        CoreServices::updateSignalChain(this);
     }
 }
 

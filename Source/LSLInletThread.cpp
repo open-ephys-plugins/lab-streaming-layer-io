@@ -77,14 +77,11 @@ void LSLInletThread::parameterValueChanged(Parameter *param)
     if (param->getName() == "data_stream")
     {
         selectedDataStream = ((SelectedStreamParameter *)param)->getSelectedIndex();
-        resizeBuffers();
-        //CoreServices::updateSignalChain(getEditor());
+        CoreServices::updateSignalChain(sn->getEditor());
     }
     else if (param->getName() == "marker_stream")
     {
         selectedMarkersStream = ((SelectedStreamParameter *)param)->getSelectedIndex();
-        //TODO: Validate marker stream selection against STREAM_SELECTION_UNDEFINED;
-        //CoreServices::updateSignalChain(getEditor());
     }
     else if (param->getName() == "scale")
     {
@@ -100,6 +97,58 @@ void LSLInletThread::parameterValueChanged(Parameter *param)
 void LSLInletThread::discover()
 {
     availableStreams = lsl::resolve_streams(1.0);
+
+    if (availableStreams.empty())
+    {
+        LOGC("No streams found");
+        return;
+    }
+    dataStreams.clear();
+    markerStreams.clear();
+
+    // There are one or more streams, divide them into data and marker streams
+    Array<String> dataStreamNames;
+    Array<String> markerStreamNames;
+
+    for (int i = 0; i < availableStreams.size(); i++)
+    {
+        const auto &s = availableStreams[i];
+        if (s.nominal_srate() > 0) // only data streams have a non-zero nominal sample rate
+        {
+            //dataStreamSelectorBox->addItem(s.name() + " (" + s.type() + ")", i + 1);
+            dataStreamNames.add (s.name() + " (" + s.type() + ")");
+            dataStreams.push_back(s);
+        }
+        else
+        {
+            if (s.channel_count() != 1)
+            {
+                LOGC("Skipping irregular stream ", s.name(), " because it doesn't have exactly 1 channel.\n", s.as_xml());
+                continue;
+            }
+            markerStreamNames.add(s.name() + " (" + s.type() + ")");
+            markerStreams.push_back(s);
+        }
+    }
+
+    if (markerStreamNames.size() == 0)
+        markerStreamNames.add("None");
+
+    SelectedStreamParameter* dataStreamParam = (SelectedStreamParameter*) (getParameter ("data_stream"));
+    dataStreamParam->setStreamNames (dataStreamNames);
+
+    SelectedStreamParameter* markerStreamParam = (SelectedStreamParameter*) (getParameter ("marker_stream"));
+    markerStreamParam->setStreamNames (markerStreamNames);
+
+    selectedDataStream = !dataStreamNames.size() ? STREAM_SELECTION_UNDEFINED : 0; //default to the first data stream
+    selectedMarkersStream = !markerStreamNames.size() ? STREAM_SELECTION_UNDEFINED : 0; //default to the first marker stream
+
+    CoreServices::updateSignalChain(sn->getEditor());
+
+    if (!availableStreams.empty())
+    {
+        LOGC("Found ", availableStreams.size(), " total streams");
+    }
 }
 
 bool LSLInletThread::updateBuffer()
@@ -179,6 +228,8 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
     {
         return;
     }
+    
+    //LOGC("*** readMarkers called with samples_to_read = ", samples_to_read);
 
     // clear TTL buffer
     for (int i = 0; i < samples_to_read; i++)
@@ -212,13 +263,17 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
                 break;
             }
 
-            if (eventMap.find(sample) == eventMap.end())
-            {
-                LOGC("Mapping not found for marker ", sample);
-            }
-            else
-            {
-                ttlEventWords[0] = 1ULL << (eventMap[sample] - 1);
+            // Debug: Print all available mappings and current sample
+            LOGC("Current sample: ", sample);
+            LOGC("Available mappings:");
+            for (const auto& mapping : eventMap) {
+                LOGC("Key: '", mapping.first, "' Value: ", mapping.second);
+                
+                if (mapping.first == sample) {
+                    ttlEventWords[0] = 1ULL << (mapping.second - 1);
+                    LOGC("Found matching mapping!");
+                    break;
+                }
             }
 
             if (++i >= samples_to_read)
@@ -239,7 +294,7 @@ void LSLInletThread::readMarkers(std::size_t samples_to_read)
 
 bool LSLInletThread::foundInputSource()
 {
-    return !availableStreams.empty();
+    return !dataStreams.empty();
 }
 
 bool LSLInletThread::startAcquisition()
@@ -253,9 +308,9 @@ bool LSLInletThread::startAcquisition()
     totalSamples = 0;
     initialTimestamp = TIMESTAMP_UNDEFINED;
 
-    this->dataStream = new lsl::stream_inlet(availableStreams[selectedDataStream]);
+    this->dataStream = new lsl::stream_inlet(dataStreams[selectedDataStream]);
 
-    numChannels = availableStreams[selectedDataStream].channel_count();
+    numChannels = dataStreams[selectedDataStream].channel_count();
     sourceBuffers[0]->resize(numChannels, 100000);
 
     if (auto newBuffer = (float *)realloc(dataBuffer, numChannels * numSamples * sizeof(float)))
@@ -302,9 +357,10 @@ bool LSLInletThread::startAcquisition()
         return false;
     }
 
-    if (selectedMarkersStream != STREAM_SELECTION_UNDEFINED)
+    if (markerStreams.size())
     {
-        this->markersStream = new lsl::stream_inlet(availableStreams[selectedMarkersStream]);
+        int selectedMarkerStream = ((SelectedStreamParameter*) (getParameter("marker_stream")))->getSelectedIndex();
+        this->markersStream = new lsl::stream_inlet(markerStreams[selectedMarkerStream]);
         jassert(this->markersStream->get_channel_count() == 1);
     }
 
@@ -352,23 +408,25 @@ void LSLInletThread::updateSettings(OwnedArray<ContinuousChannel> *continuousCha
     configurationObjects->clear();
     sourceStreams->clear();
 
-    if (availableStreams.empty())
+    if (dataStreams.empty())
     {
         return;
     }
 
-    numChannels = availableStreams[selectedDataStream].channel_count();
+    selectedDataStream = ((SelectedStreamParameter*) (getParameter("data_stream")))->getSelectedIndex();
+
+    numChannels = dataStreams[selectedDataStream].channel_count();
 
     DataStream::Settings settings{
-        availableStreams[selectedDataStream].name(),
-        availableStreams[selectedDataStream].type(),
-        availableStreams[selectedDataStream].source_id(),
+        dataStreams[selectedDataStream].name(),
+        dataStreams[selectedDataStream].type(),
+        dataStreams[selectedDataStream].source_id(),
 
-        (float)availableStreams[selectedDataStream].nominal_srate()
+        (float)dataStreams[selectedDataStream].nominal_srate()
 
     };
     sourceStreams->add(new DataStream(settings));
-    for (int ch = 0; ch < availableStreams[selectedDataStream].channel_count(); ch++)
+    for (int ch = 0; ch < dataStreams[selectedDataStream].channel_count(); ch++)
     {
         ContinuousChannel::Settings settings{
             ContinuousChannel::Type::ELECTRODE,
@@ -385,7 +443,7 @@ void LSLInletThread::updateSettings(OwnedArray<ContinuousChannel> *continuousCha
 
     EventChannel::Settings eventSettings{
         EventChannel::Type::TTL,
-        "Events" + availableStreams[selectedDataStream].source_id(),
+        "Events" + dataStreams[selectedDataStream].source_id(),
         "description",
         "identifier",
         sourceStreams->getFirst(),

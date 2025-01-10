@@ -44,18 +44,26 @@ public:
 
     /** User defined scaling factor for samples */
     float dataScale;
+
     /** Number of samples to read during each update cycle */
     int numSamples;
 
     /** Index (in the discovered streams list) of the user selected LSL stream */
     int selectedDataStream;
+    
     /** Index (in the discovered streams list) of the user selected LSL stream that will be used to read markers */
     int selectedMarkersStream;
-    /** The list of discovered LSL streams */
+
+    /** List of most recently discovered LSL streams */
     std::vector<lsl::stream_info> availableStreams;
+
+    /** Organize available streams into data and marker streams */
+    std::vector<lsl::stream_info> dataStreams;
+    std::vector<lsl::stream_info> markerStreams;
 
     /** Perform LSL stream discovery */
     void discover();
+
     /** Define a file path that can be used to read the TTL mapping for the markers stream.
      * The content of the file should be a name-value pair in json format, for example:
      * {
