@@ -37,7 +37,7 @@ class LSLInletThread : public DataThread
 {
 public:
     /** The class constructor, used to initialize any members. */
-    LSLInletThread(SourceNode *sn);
+    LSLInletThread (SourceNode* sn);
 
     /** The class destructor, used to deallocate memory */
     ~LSLInletThread();
@@ -50,7 +50,7 @@ public:
 
     /** Index (in the discovered streams list) of the user selected LSL stream */
     int selectedDataStream;
-    
+
     /** Index (in the discovered streams list) of the user selected LSL stream that will be used to read markers */
     int selectedMarkersStream;
 
@@ -71,7 +71,7 @@ public:
      *   "Marker_2": 2
      * }
      */
-    bool setMarkersMappingPath(std::string filePath);
+    bool setMarkersMappingPath (std::string filePath);
 
     // ------------------------------------------------------------
     //                  PURE VIRTUAL METHODS
@@ -91,12 +91,12 @@ public:
     bool stopAcquisition() override;
 
     /* Passes the processor's info objects to DataThread, to allow them to be configured */
-    void updateSettings(OwnedArray<ContinuousChannel> *continuousChannels,
-                        OwnedArray<EventChannel> *eventChannels,
-                        OwnedArray<SpikeChannel> *spikeChannels,
-                        OwnedArray<DataStream> *sourceStreams,
-                        OwnedArray<DeviceInfo> *devices,
-                        OwnedArray<ConfigurationObject> *configurationObjects) override;
+    void updateSettings (OwnedArray<ContinuousChannel>* continuousChannels,
+                         OwnedArray<EventChannel>* eventChannels,
+                         OwnedArray<SpikeChannel>* spikeChannels,
+                         OwnedArray<DataStream>* sourceStreams,
+                         OwnedArray<DeviceInfo>* devices,
+                         OwnedArray<ConfigurationObject>* configurationObjects) override;
 
     // ------------------------------------------------------------
     //                   VIRTUAL METHODS
@@ -104,36 +104,36 @@ public:
     // ------------------------------------------------------------
 
     /** Create the DataThread custom editor */
-    std::unique_ptr<GenericEditor> createEditor(SourceNode *sn) override;
+    std::unique_ptr<GenericEditor> createEditor (SourceNode* sn) override;
 
     /** Register parameters */
     void registerParameters() override;
 
     /** Handle parameter changes */
-    void parameterValueChanged(Parameter *param) override;
+    void parameterValueChanged (Parameter* param) override;
 
     // ** Allows the DataThread plugin to respond to messages sent by other processors */
-    void handleBroadcastMessage(const String& msg, const int64 messageTimeMilliseconds) override;
+    void handleBroadcastMessage (const String& msg, const int64 messageTimeMilliseconds) override;
 
     // ** Allows the DataThread plugin to handle a config message while acquisition is not active. */
-    String handleConfigMessage(const String& msg) override;
+    String handleConfigMessage (const String& msg) override;
 
 private:
     template <typename T>
-    void printBuffer(const char *desc, T *buf, size_t size);
-    void readMarkers(std::size_t samples_to_read);
-    std::string trim(const std::string str);
+    void printBuffer (const char* desc, T* buf, size_t size);
+    void readMarkers (std::size_t samples_to_read);
+    std::string trim (const std::string str);
 
     int64 totalSamples;
-    lsl::stream_inlet *dataStream;
-    lsl::stream_inlet *markersStream;
+    lsl::stream_inlet* dataStream;
+    lsl::stream_inlet* markersStream;
 
-    float *dataBuffer;
-    float *samples;
-    double *timestampBuffer;
+    float* dataBuffer;
+    float* samples;
+    double* timestampBuffer;
 
-    int64 *sampleNumbers;
-    uint64 *ttlEventWords;
+    int64* sampleNumbers;
+    uint64* ttlEventWords;
     std::map<std::string, uint64> eventMap;
 
     int numChannels;

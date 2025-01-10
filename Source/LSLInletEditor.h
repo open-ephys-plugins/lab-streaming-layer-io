@@ -24,15 +24,14 @@
 #ifndef LSLINLETEDITOR_H_DEFINED
 #define LSLINLETEDITOR_H_DEFINED
 
-#include <EditorHeaders.h>
 #include "LSLInletThread.h"
+#include <EditorHeaders.h>
 
 class RefreshButton : public Button
 {
-
 public:
     /** Constructor */
-    RefreshButton ();
+    RefreshButton();
 
     /** Destructor */
     ~RefreshButton() {}
@@ -43,34 +42,32 @@ public:
     void parentSizeChanged() override;
 
 private:
-
     std::unique_ptr<Drawable> refreshIcon;
 };
 
 class LSLInletEditor : public GenericEditor,
-					   public Button::Listener
+                       public Button::Listener
 {
 public:
-	/** The class constructor, used to initialize any members. */
-	LSLInletEditor(GenericProcessor *parentNode, LSLInletThread *inlet);
+    /** The class constructor, used to initialize any members. */
+    LSLInletEditor (GenericProcessor* parentNode, LSLInletThread* inlet);
 
-	/** The class destructor, used to deallocate memory */
-	~LSLInletEditor() {}
+    /** The class destructor, used to deallocate memory */
+    ~LSLInletEditor() {}
 
-	/** Button listener callback, called by button when pressed. */
-	void buttonClicked(Button *button) override;
+    /** Button listener callback, called by button when pressed. */
+    void buttonClicked (Button* button) override;
 
-	/** Updates editor state on start of acquisition */
-	void startAcquisition() override;
+    /** Updates editor state on start of acquisition */
+    void startAcquisition() override;
 
-	/** Updates editor state on stop of acquisition */
-	void stopAcquisition() override;
+    /** Updates editor state on stop of acquisition */
+    void stopAcquisition() override;
 
 private:
+    std::unique_ptr<RefreshButton> refreshButton;
 
-	std::unique_ptr<RefreshButton> refreshButton;
-
-	LSLInletThread *inletThread;
+    LSLInletThread* inletThread;
 };
 
 #endif
