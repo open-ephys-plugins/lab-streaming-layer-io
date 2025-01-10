@@ -1,24 +1,35 @@
 name: mac
 
-on: 
+on:
   push:
 
 jobs:
-
   build-mac:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
+    - name: set env vars
+      run: |
+        if [ ${{github.ref_name}} == 'juce8' ]; then
+          echo "GUI_BRANCH=development-juce8" >> "$GITHUB_ENV"
+        elif [ ${{github.ref_name}} == 'testing-juce8' ]; then
+          echo "GUI_BRANCH=testing-juce8" >> "$GITHUB_ENV"
+        else
+          echo "Invalid branch : ${{github.ref_name}}"
+          exit 1
+        fi
     - name: setup
       run: |
         cd ../..
-        git clone https://github.com/open-ephys/plugin-GUI.git --branch main
+        git clone https://github.com/open-ephys/plugin-GUI.git --branch $GUI_BRANCH
         cd plugin-GUI/Build && cmake -G "Xcode" ..
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
     - name: build
       run: |
         cd Build
@@ -26,20 +37,56 @@ jobs:
         xcodebuild -configuration Release
 #    - name: test
 #      run: cd build && ctest
-    - name: deploy
-      if: github.ref == 'refs/heads/main'
+    - name: codesign_deploy
+      if: github.ref == 'refs/heads/testing-juce8'
       env:
-        artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
+        ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
+        MACOS_CERTIFICATE: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        MACOS_CERTIFICATE_PWD: ${{ secrets.BUILD_CERTIFICATE_PWD }}
+        MACOS_CERTIFICATE_NAME: ${{ secrets.BUILD_CERTIFICATE_NAME }}
+        MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
+        PROD_MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+        PROD_MACOS_NOTARIZATION_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+        PROD_MACOS_NOTARIZATION_PWD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
         build_dir: "Build/Release"
         package: LabStreamingLayerIO-mac
       run: |
-        plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]" | tail -1)
+        plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
         tag=$(grep -w Source/OpenEphysLib.cpp -e 'info->libVersion' | grep -Eo "[0-9]+.[0-9]+.[0-9]+")
         new_plugin_ver=$tag-API$plugin_api
-        mkdir plugins 
+
+        mkdir plugins
         cp -r $build_dir/*.bundle plugins
-        mkdir shared	
+        mkdir shared
         cp -r libs/macos/bin/* shared
+
+        # Certificate setup
+        echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+        security create-keychain -p $MACOS_CI_KEYCHAIN_PWD build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p $MACOS_CI_KEYCHAIN_PWD build.keychain
+        security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CI_KEYCHAIN_PWD build.keychain
+
+        # Codesign
+        /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" -v plugins/lab-streaming-layer-io.bundle --deep --strict --timestamp --options=runtime
+        /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" -v shared/* --deep --strict --timestamp --options=runtime
+        /usr/bin/codesign -dv --verbose=4 plugins/lab-streaming-layer-io.bundle
+
+        # Notarization setup and process
+        xcrun notarytool store-credentials "notarytool-profile" --apple-id "$PROD_MACOS_NOTARIZATION_APPLE_ID" --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" --password "$PROD_MACOS_NOTARIZATION_PWD"
+        /usr/bin/ditto -c -k --sequesterRsrc --keepParent plugins/lab-streaming-layer-io.bundle lab-streaming-layer-io.zip
+        xcrun notarytool submit "lab-streaming-layer-io.zip" --keychain-profile "notarytool-profile" --wait
+
+        # Stapling
+        rm -r plugins/*
+        /usr/bin/ditto -x -k lab-streaming-layer-io.zip plugins
+        xcrun stapler staple plugins/lab-streaming-layer-io.bundle
+        spctl -vvv --assess --type exec plugins/lab-streaming-layer-io.bundle
+
+        # Create final zip and upload
         zipfile=${package}_${new_plugin_ver}.zip
-        zip -r -X $zipfile plugins shared
-        curl -H "X-JFrog-Art-Api:$artifactoryApiKey" -T $zipfile "https://openephys.jfrog.io/artifactory/LabStreamingLayerIO-plugin/mac/$zipfile"
+        mkdir temp_dir
+        cp -R plugins shared temp_dir
+        /usr/bin/ditto -c -k --sequesterRsrc temp_dir $zipfile
+        curl -H "X-JFrog-Art-Api:$ARTIFACTORY_ACCESS_TOKEN" -T $zipfile "https://openephys.jfrog.io/artifactory/LabStreamingLayerIO-plugin/mac/$zipfile"
