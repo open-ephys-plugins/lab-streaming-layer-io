@@ -61,6 +61,7 @@ LSLInletThread::LSLInletThread (SourceNode* sn) : DataThread (sn),
 LSLInletThread::~LSLInletThread()
 {
     free (dataBuffer);
+    free (samples);
     free (timestampBuffer);
     free (sampleNumbers);
     free (ttlEventWords);
@@ -71,6 +72,7 @@ void LSLInletThread::registerParameters()
     Array<String> dataStreamList;
     for (const auto& stream : dataStreams)
         dataStreamList.add (stream.name() + " (" + stream.type() + ")");
+
     addSelectedStreamParameter (Parameter::PROCESSOR_SCOPE, "data_stream", "Data Stream", "The LSL stream to read data from", dataStreamList, 0);
 
     Array<String> markerStreamList;
@@ -78,8 +80,14 @@ void LSLInletThread::registerParameters()
         markerStreamList.add (stream.name() + " (" + stream.type() + ")");
 
     addSelectedStreamParameter (Parameter::PROCESSOR_SCOPE, "marker_stream", "Marker Stream", "The LSL stream to read markers from", markerStreamList, 0);
+
+    selectedDataStream = dataStreamList.size() == 0 ? STREAM_SELECTION_UNDEFINED : 0; //default to the first data stream
+    selectedMarkersStream = markerStreamList.size() == 0 ? STREAM_SELECTION_UNDEFINED : 0; //default to the first marker stream
+    getParameter ("data_stream")->currentValue = selectedDataStream;
+    getParameter ("marker_stream")->currentValue = selectedMarkersStream;
+
     addIntParameter (Parameter::PROCESSOR_SCOPE, "scale", "Scale", "Scale factor for the data samples", 1, 0.0f, 10000.0f);
-    addPathParameter (Parameter::PROCESSOR_SCOPE, "mapping", "Marker Map File", "Select a file with the TTL mapping for the markers stream", "default", { "json" }, false, false, true);
+    addPathParameter (Parameter::PROCESSOR_SCOPE, "mapping", "Marker Map File", "Select a file with the TTL mapping for the markers stream", "", { "json" }, false, false, true);
 }
 
 void LSLInletThread::parameterValueChanged (Parameter* param)
@@ -87,11 +95,39 @@ void LSLInletThread::parameterValueChanged (Parameter* param)
     if (param->getName() == "data_stream")
     {
         selectedDataStream = ((SelectedStreamParameter*) param)->getSelectedIndex();
+
+        // If the selected stream index is out of bounds, reset to the first stream
+        if ((selectedDataStream < 0 || selectedDataStream >= dataStreams.size())
+            && dataStreams.size() > 0)
+        {
+            selectedDataStream = 0;
+            param->currentValue = selectedDataStream;
+        }
+        // If the selected stream index is out of bounds and there are no streams, reset to undefined
+        else if (selectedDataStream >= 0 && dataStreams.empty())
+        {
+            selectedDataStream = -1; // reset to undefined
+            param->currentValue = selectedDataStream;
+        }
         CoreServices::updateSignalChain (sn->getEditor());
     }
     else if (param->getName() == "marker_stream")
     {
         selectedMarkersStream = ((SelectedStreamParameter*) param)->getSelectedIndex();
+
+        // If the selected stream index is out of bounds, reset to the first stream
+        if ((selectedMarkersStream < 0 || selectedMarkersStream >= markerStreams.size())
+            && markerStreams.size() > 0)
+        {
+            selectedMarkersStream = 0;
+            param->currentValue = selectedMarkersStream;
+        }
+        // If the selected stream index is out of bounds and there are no streams, reset to undefined
+        else if (selectedMarkersStream >= 0 && markerStreams.empty())
+        {
+            selectedMarkersStream = -1; // reset to undefined
+            param->currentValue = selectedMarkersStream;
+        }
     }
     else if (param->getName() == "scale")
     {
@@ -100,6 +136,9 @@ void LSLInletThread::parameterValueChanged (Parameter* param)
     else if (param->getName() == "mapping")
     {
         std::string filePath = ((PathParameter*) param)->getValue().toString().toStdString();
+        if (filePath == "None")
+            return;
+
         setMarkersMappingPath (filePath);
     }
 }
@@ -108,7 +147,7 @@ void LSLInletThread::discover()
 {
     availableStreams = lsl::resolve_streams (1.0);
 
-    if (availableStreams.empty())
+    if (availableStreams.empty() && firstConnect)
     {
         LOGC ("No streams found");
         firstConnect = false;
@@ -142,10 +181,7 @@ void LSLInletThread::discover()
         }
     }
 
-    if (markerStreamNames.size() == 0)
-        markerStreamNames.add ("None");
-
-    if (!firstConnect)
+    if (! firstConnect)
     {
         SelectedStreamParameter* dataStreamParam = (SelectedStreamParameter*) (getParameter ("data_stream"));
         dataStreamParam->setStreamNames (dataStreamNames);
@@ -153,15 +189,16 @@ void LSLInletThread::discover()
         SelectedStreamParameter* markerStreamParam = (SelectedStreamParameter*) (getParameter ("marker_stream"));
         markerStreamParam->setStreamNames (markerStreamNames);
 
-        CoreServices::updateSignalChain (sn->getEditor());
+        CoreServices::updateSignalChain (sn);
     }
-
-    selectedDataStream = ! dataStreamNames.size() ? STREAM_SELECTION_UNDEFINED : 0; //default to the first data stream
-    selectedMarkersStream = ! markerStreamNames.size() ? STREAM_SELECTION_UNDEFINED : 0; //default to the first marker stream
 
     if (! availableStreams.empty())
     {
         LOGC ("Found ", availableStreams.size(), " total streams");
+    }
+    else
+    {
+        LOGC ("No streams found");
     }
 
     firstConnect = false;
@@ -178,11 +215,7 @@ bool LSLInletThread::updateBuffer()
     }
     catch (const std::runtime_error& re)
     {
-        std::cout << "Failed to read data samples with runtime error: " << re.what() << std::endl;
-    }
-    catch (const std::exception& ex)
-    {
-        std::cout << "Failed to read data samples with exception: " << ex.what() << std::endl;
+        LOGE ("Failed to read data samples with runtime error: ", re.what());
     }
 
     if (multiplexed_samples_read <= 0)
@@ -296,11 +329,11 @@ void LSLInletThread::readMarkers (std::size_t samples_to_read)
     }
     catch (const std::runtime_error& re)
     {
-        std::cout << "Failed to read markers with runtime error: " << re.what() << std::endl;
+        LOGE ("Failed to read markers with runtime error: ", re.what());
     }
     catch (const std::exception& ex)
     {
-        std::cout << "Failed to read markers with exception: " << ex.what() << std::endl;
+        LOGE ("Failed to read markers with exception: ", ex.what());
     }
 }
 
@@ -387,7 +420,11 @@ bool LSLInletThread::stopAcquisition()
         signalThreadShouldExit();
     }
 
-    waitForThreadToExit (500);
+    if (MessageManager::getInstance()->isThisTheMessageThread())
+    {
+        // if we are on the message thread, we can wait for the thread to exit immediately
+        stopThread (500);
+    }
 
     if (this->dataStream != NULL)
     {
@@ -424,8 +461,6 @@ void LSLInletThread::updateSettings (OwnedArray<ContinuousChannel>* continuousCh
     {
         return;
     }
-
-    selectedDataStream = ((SelectedStreamParameter*) (getParameter ("data_stream")))->getSelectedIndex();
 
     numChannels = dataStreams[selectedDataStream].channel_count();
 
@@ -531,12 +566,12 @@ bool LSLInletThread::setMarkersMappingPath (std::string filePath)
     }
     catch (const std::runtime_error& re)
     {
-        std::cout << "Failed to read markers mapping file with runtime error: " << re.what() << std::endl;
+        LOGE ("Failed to read markers mapping file with runtime error: ", re.what());
         return false;
     }
     catch (const std::exception& ex)
     {
-        std::cout << "Failed to read markers mapping file with exception: " << ex.what() << std::endl;
+        LOGE ("Failed to read markers mapping file with exception: ", ex.what());
         return false;
     }
 
