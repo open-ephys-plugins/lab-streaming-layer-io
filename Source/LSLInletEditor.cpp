@@ -71,7 +71,7 @@ LSLInletEditor::LSLInletEditor(GenericProcessor *parentNode, LSLInletThread *thr
     refreshButton = std::make_unique<RefreshButton>();
     refreshButton->setBounds (desiredWidth - 65, 4, 16, 16);
     refreshButton->addListener (this);
-    refreshButton->setTooltip ("Re-scan basestation for hardware changes.");
+    refreshButton->setTooltip ("Re-scan network for available LSL streams");
     addChildComponent (refreshButton.get());
     refreshButton->setVisible (true);
 }
