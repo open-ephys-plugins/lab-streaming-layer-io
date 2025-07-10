@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <Windows.h>
 #define EXPORT __declspec (dllexport)
 #else
@@ -44,7 +44,7 @@ extern "C" EXPORT void getLibInfo (Plugin::LibraryInfo* info)
 	The GUI refuses to load plugins with mismatched API versions */
     info->apiVersion = PLUGIN_API_VER;
     info->name = "Lab Streaming Layer IO";
-    info->libVersion = "0.2.0";
+    info->libVersion = "1.0.0";
     info->numPlugins = NUM_PLUGINS;
 }
 
